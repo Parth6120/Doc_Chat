@@ -6,6 +6,9 @@ from typing import Optional
 from multi_doc_chat.logging import GLOBAL_LOGGER as log
 
 class ApiSettings(BaseSettings):
+    """
+    API key configuration class
+    """
     GEMINI_API_KEY : SecretStr
     PINECONE_API_KEY : SecretStr
     EMBEDDING_API_KEY : SecretStr

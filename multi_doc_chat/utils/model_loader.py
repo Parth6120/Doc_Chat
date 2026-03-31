@@ -1,6 +1,6 @@
 import os
 import sys
-import json
+# import json
 
 from dotenv import load_dotenv
 from multi_doc_chat.utils.config_loader import load_config
@@ -35,7 +35,7 @@ class ModelLoader:
             model_name = self.config["embedding_model"]["model_name"]
             log.info("Loading embedding model", model = model_name)
             return GoogleGenerativeAIEmbeddings(model=model_name,
-                                                api_key=self.embedding_api_key)
+                                                google_api_key=self.embedding_api_key)
 
         except Exception as e:
             log.error("Error loading embedding model", error = str(e))
@@ -59,7 +59,7 @@ class ModelLoader:
             if provider == "google":
                 return ChatGoogleGenerativeAI(
                     model = model_name,
-                    api_key = self.gemini_api_key,
+                    google_api_key = self.gemini_api_key,
                     temperature = temperature,
                     max_output_tokens = max_tokens
                 )
