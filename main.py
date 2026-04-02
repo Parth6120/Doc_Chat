@@ -1,14 +1,14 @@
 from fastapi import FastAPI
 import uvicorn
 
-from routes.document_router import doc_router
+from routes.ingestion_router import ingestion_router
 
 app = FastAPI(
     title = "Multi-Doc-Chat"
 )
 
 app.include_router(
-    doc_router,
+    ingestion_router,
     prefix = "/documents",
     tags = ["Document Management"]
 )

@@ -8,6 +8,7 @@ from multi_doc_chat.logging import GLOBAL_LOGGER as log
 from multi_doc_chat.exception.custom_exception import CustomException
 from multi_doc_chat.config.config import get_settings
 
+
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 
 class ModelLoader:

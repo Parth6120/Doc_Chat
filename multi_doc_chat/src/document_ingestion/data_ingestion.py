@@ -6,6 +6,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable, List, Optional, Dict, Any
+from dotenv import load_dotenv
 
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -18,19 +19,23 @@ from multi_doc_chat.logging import GLOBAL_LOGGER as log
 from multi_doc_chat.exception.custom_exception import CustomException
 from multi_doc_chat.config.config import get_settings
 from multi_doc_chat.utils.text_cleaner import clean_extracted_text
+from multi_doc_chat.utils.config_loader import load_config
 
 class PineconeIngestor:
     """
     Process the doc and upsert it into the pinecone vector database.
     """
-    def __init__(self, index_name: str = "Multi-Doc-Chat"):
+    def __init__(self, index_name: str = "Doc-Chat"):
         try:
             self.settings = get_settings()
             self.index_name = index_name
+            self.config = load_config()
+            load_dotenv()
 
             # API keys
             self.embedding_api_key = self.settings.EMBEDDING_API_KEY.get_secret_value()
             self.pinecone_api_key = self.settings.PINECONE_API_KEY.get_secret_value()
+            
 
             # Models
             self.embeddings_model = GoogleGenerativeAIEmbeddings(
@@ -64,7 +69,7 @@ class PineconeIngestor:
                 docs.extend(loader.load())
 
             except Exception as e:
-                log.error(f"Failed to load {path.prefix} file", path = str(path), error = str(e))
+                log.error(f"Failed to load {path.name} file", path = str(path), error = str(e))
                 continue
         log.info("Documents loaded into memory", total_pages = len(docs))
         return docs
