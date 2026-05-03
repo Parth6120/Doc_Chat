@@ -154,6 +154,7 @@ venv.bak/
 
 # mkdocs documentation
 /site
+.claude
 data
 RAG_DOCS.docx
 

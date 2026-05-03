@@ -9,9 +9,10 @@ class ApiSettings(BaseSettings):
     """
     API key configuration class
     """
-    GEMINI_API_KEY : SecretStr
-    PINECONE_API_KEY : SecretStr
-    EMBEDDING_API_KEY : SecretStr
+    GEMINI_API_KEY: SecretStr
+    PINECONE_API_KEY: SecretStr
+    EMBEDDING_API_KEY: SecretStr
+    REDIS_URL: SecretStr
 
     model_config = SettingsConfigDict(
         env_file= '.env',

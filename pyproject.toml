@@ -23,6 +23,7 @@ dependencies = [
     "python-multipart>=0.0.22",
     "ragas>=0.4.3",
     "rapidocr-onnxruntime>=1.4.4",
+    "redis>=7.4.0",
     "structlog>=25.5.0",
     "uvicorn>=0.42.0",
 ]

@@ -1,6 +1,14 @@
 embedding_model:
     provider: "google"
-    model_name: "models/text-embedding-004"
+    model_name: "models/gemini-embedding-001"
+    output_dimensionality: 768
+
+pinecone:
+    index_name: "doc-chat"
+
+chunking:
+    chunk_size: 1000
+    chunk_overlap: 250
 
 retriever:
     top_k: 10
