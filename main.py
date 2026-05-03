@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from routes.ingestion_router import ingestion_router
@@ -6,6 +7,13 @@ from routes.session_router import session_router
 from routes.chat_router import chat_router
 
 app = FastAPI(title="Multi-Doc-Chat")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:8501"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(
     ingestion_router,

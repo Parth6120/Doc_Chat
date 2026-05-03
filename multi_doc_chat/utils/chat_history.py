@@ -22,18 +22,25 @@ class ChatHistoryManager:
         self._sessions = db["sessions"]
         self._messages = db["messages"]
 
-    async def create_session(self, user_id: str) -> str:
+    async def create_session(self, user_id: str, title: str = "New Chat") -> str:
         session_id = f"sess_{uuid.uuid4().hex[:12]}"
         now = datetime.now(timezone.utc)
         await self._sessions.insert_one({
             "_id": session_id,
             "user_id": user_id,
-            "title": "New Chat",
+            "title": title,
             "created_at": now,
             "updated_at": now,
         })
-        log.info("Session created", user_id=user_id, session_id=session_id)
+        log.info("Session created", user_id=user_id, session_id=session_id, title=title)
         return session_id
+
+    async def rename_session(self, session_id: str, title: str) -> None:
+        await self._sessions.update_one(
+            {"_id": session_id},
+            {"$set": {"title": title, "updated_at": datetime.now(timezone.utc)}},
+        )
+        log.info("Session renamed", session_id=session_id, title=title)
 
     async def list_sessions(self, user_id: str) -> List[Dict]:
         cursor = self._sessions.find(

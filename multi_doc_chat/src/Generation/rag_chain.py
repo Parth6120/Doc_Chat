@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import AsyncGenerator, Dict, List
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -84,3 +84,42 @@ class RAGChain:
         except Exception as e:
             log.error("Generation failed", session_id=session_id, user_id=user_id, error=str(e))
             raise CustomException("Generation failed", e) from e
+
+    async def stream(
+        self, query: str, session_id: str, user_id: str
+    ) -> AsyncGenerator[Dict, None]:
+        try:
+            docs = self.retriever.retrieve(query, user_id)
+            context = "\n\n".join(doc.page_content for doc in docs)
+
+            history_records = await self.history_manager.get_history(session_id)
+            history_messages: List = []
+            for record in history_records:
+                if record["role"] == "human":
+                    history_messages.append(HumanMessage(content=record["content"]))
+                else:
+                    history_messages.append(AIMessage(content=record["content"]))
+
+            messages = [SystemMessage(content=_SYSTEM_TEMPLATE.format(context=context))]
+            messages.extend(history_messages)
+            messages.append(HumanMessage(content=query))
+
+            full_answer = ""
+            async for chunk in self.llm.astream(messages):
+                token = chunk.content
+                if token:
+                    full_answer += token
+                    yield {"token": token}
+
+            await self.history_manager.save_exchange(session_id, query, full_answer)
+
+            sources = list({
+                doc.metadata.get("source", "unknown")
+                for doc in docs
+                if doc.metadata
+            })
+            yield {"done": True, "sources": sources}
+
+        except Exception as e:
+            log.error("Streaming failed", session_id=session_id, user_id=user_id, error=str(e))
+            raise CustomException("Streaming failed", e) from e

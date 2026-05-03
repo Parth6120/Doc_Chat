@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Body
 
 from multi_doc_chat.logging import GLOBAL_LOGGER as log
 from multi_doc_chat.config.config import get_settings
@@ -18,13 +18,29 @@ def _get_manager() -> ChatHistoryManager:
 
 
 @session_router.post("/new")
-async def create_session(user_id: str = Query(..., description="Unique user identifier")):
+async def create_session(
+    user_id: str = Query(..., description="Unique user identifier"),
+    title: str = Query("New Chat", description="Session display name"),
+):
     try:
-        session_id = await _get_manager().create_session(user_id)
-        return {"status": "success", "user_id": user_id, "session_id": session_id}
+        session_id = await _get_manager().create_session(user_id, title=title)
+        return {"status": "success", "user_id": user_id, "session_id": session_id, "title": title}
     except Exception as e:
         log.error("Failed to create session", user_id=user_id, error=str(e))
         raise HTTPException(status_code=500, detail="Failed to create session.")
+
+
+@session_router.patch("/{session_id}/rename")
+async def rename_session(
+    session_id: str,
+    title: str = Body(..., embed=True, description="New session title"),
+):
+    try:
+        await _get_manager().rename_session(session_id, title)
+        return {"status": "success", "session_id": session_id, "title": title}
+    except Exception as e:
+        log.error("Failed to rename session", session_id=session_id, error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to rename session.")
 
 
 @session_router.get("/list")
@@ -35,6 +51,16 @@ async def list_sessions(user_id: str = Query(..., description="Unique user ident
     except Exception as e:
         log.error("Failed to list sessions", user_id=user_id, error=str(e))
         raise HTTPException(status_code=500, detail="Failed to list sessions.")
+
+
+@session_router.get("/{session_id}/messages")
+async def get_session_messages(session_id: str):
+    try:
+        messages = await _get_manager().get_history(session_id)
+        return {"session_id": session_id, "messages": messages}
+    except Exception as e:
+        log.error("Failed to get messages", session_id=session_id, error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to get messages.")
 
 
 @session_router.delete("/{session_id}")

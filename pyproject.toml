@@ -27,4 +27,6 @@ dependencies = [
     "redis>=7.4.0",
     "structlog>=25.5.0",
     "uvicorn>=0.42.0",
+    "httpx>=0.28.0",
+    "streamlit>=1.45.0",
 ]
