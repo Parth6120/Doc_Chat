@@ -1,4 +1,3 @@
-import uuid
 import hashlib
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -111,29 +110,27 @@ class PineconeIngestor:
             log.error("Failed to upsert documents to Pinecone", namespace=namespace, error=str(e))
             raise CustomException("Pinecone upsert failed", e) from e
 
-    def process_documents(self, file_paths: List[Path], session_id: Optional[str] = None) -> int:
+    def process_documents(self, file_paths: List[Path], user_id: str) -> int:
         """
         Main orchestration pipeline. Takes saved files and pushes them to Pinecone. Returns chunk count.
         Skips files whose content has already been ingested (via SHA-256 hash check).
         """
-        namespace = session_id or f"session_{uuid.uuid4().hex[:8]}"
-        log.info("Starting ingestion pipeline", namespace=namespace, file_count=len(file_paths))
+        log.info("Starting ingestion pipeline", user_id=user_id, file_count=len(file_paths))
 
         try:
-            # --- Deduplication: filter out already-ingested files ---
             new_files: List[Path] = []
-            file_hashes: Dict[str, str] = {}  # {str(path): hash}
+            file_hashes: Dict[str, str] = {}
 
             for path in file_paths:
                 file_hash = HashStore.hash_file(path)
-                if self.hash_store.is_ingested(file_hash):
+                if self.hash_store.is_ingested(file_hash, user_id):
                     log.info("Skipping already-ingested file", path=str(path), hash=file_hash[:12])
                 else:
                     new_files.append(path)
                     file_hashes[str(path)] = file_hash
 
             if not new_files:
-                log.info("All files already ingested, nothing to do", namespace=namespace)
+                log.info("All files already ingested, nothing to do", user_id=user_id)
                 return 0
 
             raw_docs, skipped = self._load_documents(new_files)
@@ -147,19 +144,17 @@ class PineconeIngestor:
                 doc.page_content = clean_extracted_text(doc.page_content)
 
             chunks = self._chunk_documents(raw_docs)
-
             ids = self._generate_chunk_ids(chunks, file_hashes)
-            self._upsert_to_pinecone(chunks, namespace, ids)
+            self._upsert_to_pinecone(chunks, user_id, ids)
 
-            # Register hashes only for successfully loaded files
             skipped_strs = {str(p) for p in skipped}
             for path in new_files:
                 if str(path) not in skipped_strs:
-                    self.hash_store.register(file_hashes[str(path)], path.name, namespace)
+                    self.hash_store.register(file_hashes[str(path)], path.name, user_id)
 
-            log.info("Ingestion pipeline completed", namespace=namespace, chunk_count=len(chunks))
+            log.info("Ingestion pipeline completed", user_id=user_id, chunk_count=len(chunks))
             return len(chunks)
 
         except Exception as e:
-            log.error("Ingestion pipeline failed", error=str(e), namespace=namespace)
+            log.error("Ingestion pipeline failed", error=str(e), user_id=user_id)
             raise CustomException("Pipeline execution failed", e) from e

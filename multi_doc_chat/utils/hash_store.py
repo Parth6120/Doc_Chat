@@ -16,16 +16,19 @@ class HashStore:
     def __init__(self, redis_url: str):
         self._client = redis.Redis.from_url(redis_url, decode_responses=True)
 
-    def is_ingested(self, file_hash: str) -> bool:
-        return bool(self._client.exists(self._KEY_PREFIX + file_hash))
+    def _key(self, user_id: str, file_hash: str) -> str:
+        return f"{self._KEY_PREFIX}{user_id}:{file_hash}"
 
-    def register(self, file_hash: str, filename: str, namespace: str) -> None:
+    def is_ingested(self, file_hash: str, user_id: str) -> bool:
+        return bool(self._client.exists(self._key(user_id, file_hash)))
+
+    def register(self, file_hash: str, filename: str, user_id: str) -> None:
         value = json.dumps({
             "filename": filename,
-            "namespace": namespace,
+            "user_id": user_id,
             "ingested_at": datetime.now(timezone.utc).isoformat(),
         })
-        self._client.set(self._KEY_PREFIX + file_hash, value)
+        self._client.set(self._key(user_id, file_hash), value)
 
     @staticmethod
     def hash_file(path: Path) -> str:

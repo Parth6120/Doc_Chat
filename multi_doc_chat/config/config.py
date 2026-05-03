@@ -13,6 +13,7 @@ class ApiSettings(BaseSettings):
     PINECONE_API_KEY: SecretStr
     EMBEDDING_API_KEY: SecretStr
     REDIS_URL: SecretStr
+    MONGODB_URL: SecretStr
 
     model_config = SettingsConfigDict(
         env_file= '.env',
